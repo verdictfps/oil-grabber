@@ -164,7 +164,7 @@ public class Plugin : BaseUnityPlugin
             outerBeamWidth = projEffectDefinition.outerBeamWidth
         };
     }
-
+    
     public EffectSpawnDTO GetEffectSpawnDTO(EffectSpawnEntry effect)
     {
         if (!effect.effect)
