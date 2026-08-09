@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using PerfectRandom.Sulfur.Core;
 using PerfectRandom.Sulfur.Core.CharacterStats;
 using PerfectRandom.Sulfur.Core.Items;
+using PerfectRandom.Sulfur.Core.Stats;
 using UnityEngine;
 
 namespace OilGrabber;
@@ -27,7 +28,7 @@ public class Plugin : BaseUnityPlugin
             yield return null;
         }
 
-        var database = StaticInstance<AsyncAssetLoading>.Instance.enchantmentDatabase;
+        var database = StaticInstance<AsyncAssetLoading>.Instance.itemDatabase;
         if (database == null)
         {
             Logger.LogError("Database not found");
@@ -38,28 +39,72 @@ public class Plugin : BaseUnityPlugin
         Logger.LogMessage("Finished!");
     }
 
-    public void ExportDB(EnchantmentDatabase db)
+    public void ExportDB(ItemDatabase db)
     {
         var OilList = new List<EnhancementDTO>();
         var scrollList = new List<EnhancementDTO>();
-
-        foreach (var enhancement in db.GetRawList())
+        foreach (var item in db.GetRawList())
         {
+            if (!item)
+            {
+                continue;
+            }
+            if (item.ItemType != ItemType.Enchantment)
+            {
+                continue;
+            }
+            if (!item.includedInEarlyAccess)
+            {
+                continue;
+            }
+            Logger.LogInfo($"[Mod] Item found: {item.LocalizedDisplayName}");
+
+            var enhancement = AssetAccess.GetAsset(item.appliesEnchantment);
+            
             List<ModifierDTO> itemModifiers = new();
             foreach (var mod in enhancement.modifiersApplied)
             {
+                var attributeExpanded = AssetAccess.GetAsset(mod.attribute);
                 itemModifiers.Add(new ModifierDTO
                 {
                     modifierName = mod.attribute.ToString(),
                     statModType = FromStatModTypeToString(mod.modType),
-                    value = mod.value
+                    value = mod.value,
+                    id = attributeExpanded.id,
+                    label = attributeExpanded.label,
+                    itemDescriptionName = attributeExpanded.itemDescriptionName,
+                    showInItemDescription = attributeExpanded.showInItemDescription,
+                    unitMeasure = attributeExpanded.unitMeasure,
+                    simplifiedModAmount = attributeExpanded.simplifiedModAmount,
+                    simplifiedIncreaseString = attributeExpanded.simplifiedIncreaseString,
+                    simplifiedDecreaseString = attributeExpanded.simplifiedDecreaseString,
+                    isBooleanAttribute = attributeExpanded.isBooleanAttribute,
+                    isPercentageAttribute = attributeExpanded.isPercentageAttribute,
+                    showPercentageAsFactor = attributeExpanded.showPercentageAsFactor,
+                    overrideUnitName = attributeExpanded.overrideUnitName,
+                    projEffectDefinition = GetProjDTO(attributeExpanded?.projEffectDefinition),
+                    customVisualsPrefab = attributeExpanded.customVisualsPrefab?.ToString(),
+                    applyAttributeModifier = attributeExpanded.applyAttributeModifier?.ToString(),
+                    explosionOnHit = attributeExpanded.explosionOnHit.ToString(),
+                    explosionScale = attributeExpanded.explosionScale,
+                    spawnOnUnitHit = GetEffectSpawnDTO(attributeExpanded?.spawnOnUnitHit),
+                    spawnOnEnvironmentHit = GetEffectSpawnDTO(attributeExpanded?.spawnOnEnvironmentHit),
+                    spawnOnStartShoot = GetEffectSpawnDTO(attributeExpanded?.spawnOnStartShoot),
+                    bloodDecalOnEnvironmentHit = attributeExpanded.bloodDecalOnEnvironmentHit.ToString(),
+                    replacesBloodType = attributeExpanded.replacesBloodType.ToString()
                 });
             }
             var enhancementDTO = new EnhancementDTO
             {
-                name = enhancement.enchantmentName,
+                name = item.LocalizedDisplayName,
                 modifiers = itemModifiers
             };
+            if (enhancementDTO.modifiers.Count == 0)
+            {
+                continue;
+            }
+
+            ImageHelpers.SaveBaseImage(item);
 
             if (enhancementDTO.name.Contains("Oil"))
             {
@@ -71,15 +116,26 @@ public class Plugin : BaseUnityPlugin
             }
         }
 
-        string json = JsonConvert.SerializeObject(OilList, Formatting.Indented);
+        JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            ContractResolver = new IgnoreUnchangedDefaultsResolver(),
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore,
+            Formatting = Formatting.Indented
+        };
 
-        string path = Path.Combine(Paths.GameRootPath, "oils.json");
+        Logger.LogMessage($"Number of Oils: {OilList.Count}");
+        Logger.LogMessage($"Number of Scrolls: {scrollList.Count}");
+
+        string json = JsonConvert.SerializeObject(OilList, settings);
+
+        string path = Path.Combine(Paths.PluginPath, "OilGrabber\\Extracted Data", "oils.json");
         File.WriteAllText(path, json);
 
-        json = JsonConvert.SerializeObject(scrollList, Formatting.Indented);
+        string json2 = JsonConvert.SerializeObject(scrollList, settings);
         
-        path = Path.Combine(Paths.GameRootPath, "scrolls.json");
-        File.WriteAllText(path, json);
+        string path2 = Path.Combine(Paths.PluginPath, "OilGrabber\\Extracted Data", "scrolls.json");
+        File.WriteAllText(path2, json2);
     }
 
     
@@ -90,4 +146,35 @@ public class Plugin : BaseUnityPlugin
         StatModType.PercentMult => "PercentMult",
         _ => throw new ArgumentOutOfRangeException(nameof(modtype), $"Not expected direction value: {modtype}"),
     };
+
+    public ProjectileDTO GetProjDTO(ProjectileEffectDefinition projEffectDefinition)
+    {
+        if (!projEffectDefinition)
+        {
+            return null;
+        }
+        return new ProjectileDTO
+        {
+            drawDefaultBullet = projEffectDefinition.drawDefaultBullet,
+            mainColor = projEffectDefinition.mainColor.ToString(),
+            coreColor = projEffectDefinition.coreColor.ToString(),
+            playImpactSounds = projEffectDefinition.playImpactSounds,
+            soundShotSilencedVolumeDb = projEffectDefinition.soundShotSilencedVolumeDb,
+            innerBeamWidth = projEffectDefinition.innerBeamWidth,
+            outerBeamWidth = projEffectDefinition.outerBeamWidth
+        };
+    }
+    
+    public EffectSpawnDTO GetEffectSpawnDTO(EffectSpawnEntry effect)
+    {
+        if (!effect.effect)
+        {
+            return null;
+        }
+        return new EffectSpawnDTO
+        {
+            effect = effect?.effect?.ToString() ?? "",
+            procChance = effect.procChance
+        };
+    }
 }

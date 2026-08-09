@@ -25,7 +25,7 @@
 
   <ItemGroup>
   <Reference Include="MyAssembly">
-    <HintPath>F:\SteamLibrary\steamapps\common\SULFUR\Sulfur_Data\Managed\PerfectRandom.Sulfur.Core.dll</HintPath>
+    <HintPath>.\lib\PerfectRandom.Sulfur.Core.dll</HintPath>
   </Reference>
 </ItemGroup>
 
