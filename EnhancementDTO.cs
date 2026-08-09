@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
+<<<<<<< HEAD
 using PerfectRandom.Sulfur.Core;
 using PerfectRandom.Sulfur.Core.Items;
 using PerfectRandom.Sulfur.Core.CharacterStats;
 using PerfectRandom.Sulfur.Core.Stats;
 using PerfectRandom.Sulfur.Core.Effects;
 using UnityEngine;
+=======
+using PerfectRandom.Sulfur.Core.Items;
+>>>>>>> upstream/main
 
 [Serializable]
 public class EnhancementDTO
@@ -20,6 +24,7 @@ public class ModifierDTO
     public string modifierName;
     public string statModType;
     public float value;
+<<<<<<< HEAD
     public ItemAttributes id;
     public string label = "";
     public string itemDescriptionName = "";
@@ -60,4 +65,6 @@ public class EffectSpawnDTO
 {
     public string effect;
     public float procChance;
+=======
+>>>>>>> upstream/main
 }
