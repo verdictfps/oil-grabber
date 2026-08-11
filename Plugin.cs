@@ -57,6 +57,10 @@ public class Plugin : BaseUnityPlugin
             {
                 continue;
             }
+            if (item.LocalizedDisplayName.StartsWith("Test"))
+            {
+                continue;
+            }
             Logger.LogInfo($"[Mod] Item found: {item.LocalizedDisplayName}");
 
             var enhancement = AssetAccess.GetAsset(item.appliesEnchantment);
@@ -66,7 +70,7 @@ public class Plugin : BaseUnityPlugin
             {
                 var attributeExpanded = AssetAccess.GetAsset(mod.attribute);
                 itemModifiers.Add(new ModifierDTO
-                {
+                { 
                     modifierName = mod.attribute.ToString(),
                     statModType = FromStatModTypeToString(mod.modType),
                     value = mod.value,
@@ -104,15 +108,15 @@ public class Plugin : BaseUnityPlugin
                 continue;
             }
 
-            ImageHelpers.SaveBaseImage(item);
-
             if (enhancementDTO.name.Contains("Oil"))
             {
                 OilList.Add(enhancementDTO);
+                ImageHelpers.SaveBaseImage(item, "Oils");
             }
             else
             {
                 scrollList.Add(enhancementDTO);
+                ImageHelpers.SaveBaseImage(item, "Scrolls");
             }
         }
 
@@ -128,13 +132,17 @@ public class Plugin : BaseUnityPlugin
         Logger.LogMessage($"Number of Scrolls: {scrollList.Count}");
 
         string json = JsonConvert.SerializeObject(OilList, settings);
-
-        string path = Path.Combine(Paths.PluginPath, "OilGrabber\\Extracted Data", "oils.json");
+        string rootDir = Paths.GameRootPath;
+        string folderPath = Path.Combine(rootDir, "Extracted Data\\Oils\\");
+        Directory.CreateDirectory(folderPath);
+        string path = Path.Combine(folderPath, "oils.json");
         File.WriteAllText(path, json);
 
         string json2 = JsonConvert.SerializeObject(scrollList, settings);
-        
-        string path2 = Path.Combine(Paths.PluginPath, "OilGrabber\\Extracted Data", "scrolls.json");
+        string rootDir2 = Paths.GameRootPath;
+        string folderPath2 = Path.Combine(rootDir2, "Extracted Data\\Scrolls\\");
+        Directory.CreateDirectory(folderPath2);
+        string path2 = Path.Combine(folderPath2, "scrolls.json");
         File.WriteAllText(path2, json2);
     }
 
