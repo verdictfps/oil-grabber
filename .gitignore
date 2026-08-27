@@ -69,5 +69,6 @@ x86/
 
 # Publish Web Output
 *.[Pp]ublish.xml
+lib
 
 buildAndCopy.ps1

@@ -97,6 +97,7 @@ public class Plugin : BaseUnityPlugin
             var enhancementDTO = new EnhancementDTO
             {
                 name = item.LocalizedDisplayName,
+                LocalizedFlavor = item.LocalizedFlavor,
                 modifiers = itemModifiers
             };
             if (enhancementDTO.modifiers.Count == 0)
