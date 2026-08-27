@@ -11,6 +11,7 @@ using UnityEngine;
 public class EnhancementDTO
 {
     public string name;
+    public string LocalizedFlavor;
     public List<ModifierDTO> modifiers;
 }
 
